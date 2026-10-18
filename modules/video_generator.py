@@ -1,4 +1,7 @@
 import os
+import
+cat << 'EOF' > modules/video_generator.py
+import os
 import subprocess
 import json
 
@@ -40,16 +43,14 @@ def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: st
         check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
 
-    # Safe subtitle path escaping for FFmpeg filter on Linux runners
-    abs_subs = os.path.abspath(subs_path)
-    if os.name != 'nt':
-        # Linux path escaping for FFmpeg filter syntax
-        escaped_subs = abs_subs.replace("'", "\\'").replace(":", "\\:")
-    else:
-        escaped_subs = abs_subs.replace("\\", "/").replace(":", "\\:")
+    # Use clean relative path and escape colon for subtitles filter to prevent any FFmpeg parsing errors
+    rel_subs = subs_path.replace("\\", "/")
+    if ":" in rel_subs:
+        # Escape drive letter or absolute path colon safely for ffmpeg filter
+        rel_subs = rel_subs.replace(":", "\\:")
 
     sub_style = "FontName=Noto Sans Devanagari,FontSize=22,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Outline=2,Shadow=1,Alignment=2"
-    vf_sub = f"subtitles='{escaped_subs}':force_style='{sub_style}'"
+    vf_sub = f"subtitles='{rel_subs}':force_style='{sub_style}'"
 
     final_cmd = [
         "ffmpeg", "-y",
