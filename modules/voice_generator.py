@@ -1,23 +1,25 @@
+import os
 import asyncio
 import edge_tts
-import yaml
 
-async def _synthesize(text: str, out_audio: str, out_vtt: str, voice: str, rate: str):
-    communicate = edge_tts.Communicate(text, voice, rate=rate)
+async def generate_voiceover_async(text: str, output_audio: str, output_srt: str):
+    # Ensure output directory exists
+    os.makedirs(os.path.dirname(os.path.abspath(output_audio)), exist_ok=True)
+    os.makedirs(os.path.dirname(os.path.abspath(output_srt)), exist_ok=True)
+
+    communicate = edge_tts.Communicate(text, "hi-IN-SwaraNeural")
     submaker = edge_tts.SubMaker()
-    with open(out_audio, "wb") as audio_file:
+    
+    with open(output_audio, "wb") as f:
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
-                audio_file.write(chunk["data"])
+                f.write(chunk["data"])
             elif chunk["type"] == "WordBoundary":
                 submaker.feed(chunk)
-    with open(out_vtt, "w", encoding="utf-8") as vtt_file:
-        vtt_file.write(submaker.get_srt())
 
-def generate_voiceover(text: str, out_audio: str, out_subs: str) -> str:
-    with open("config.yaml", "r", encoding="utf-8") as f:
-        cfg = yaml.safe_load(f)
-    voice = cfg["voice"]["default"]
-    rate = cfg["voice"]["rate"]
-    asyncio.run(_synthesize(text, out_audio, out_subs, voice, rate))
-    return out_audio
+    # Save subtitles correctly
+    with open(output_srt, "w", encoding="utf-8") as f:
+        f.write(submaker.get_srt())
+
+def generate_voiceover(text: str, output_audio: str, output_srt: str):
+    asyncio.run(generate_voiceover_async(text, output_audio, output_srt))

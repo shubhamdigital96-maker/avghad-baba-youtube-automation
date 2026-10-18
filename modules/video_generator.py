@@ -12,6 +12,13 @@ def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: st
     total_dur = get_audio_duration(audio_path)
     scene_dur = max(2.0, total_dur / max(1, len(image_paths)))
 
+    # Fallback if subtitle doesn't exist
+    abs_subs_path = os.path.abspath(subs_path)
+    if not os.path.exists(abs_subs_path) or os.path.getsize(abs_subs_path) == 0:
+        os.makedirs(os.path.dirname(abs_subs_path), exist_ok=True)
+        with open(abs_subs_path, "w", encoding="utf-8") as f:
+            f.write("1\n00:00:00,000 --> 00:00:05,000\nAvghad Baba India\n\n")
+
     temp_clips = []
     for idx, img in enumerate(image_paths):
         clip_path = f"{out_mp4}_clip_{idx}.mp4"
@@ -40,12 +47,11 @@ def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: st
         check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
 
-    rel_subs = subs_path.replace("\\", "/")
-    if ":" in rel_subs:
-        rel_subs = rel_subs.replace(":", "\\:")
+    # Escape path for FFmpeg subtitles filter safely
+    formatted_subs = abs_subs_path.replace("\\", "/").replace(":", "\\:")
 
     sub_style = "FontName=Noto Sans Devanagari,FontSize=22,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Outline=2,Shadow=1,Alignment=2"
-    vf_sub = f"subtitles='{rel_subs}':force_style='{sub_style}'"
+    vf_sub = f"subtitles='{formatted_subs}':force_style='{sub_style}'"
 
     final_cmd = [
         "ffmpeg", "-y",
