@@ -2,10 +2,10 @@ name: Avghad Baba India 24x7 Automation
 
 on:
   schedule:
-    - cron: '30 2 * * *'   # 08:00 AM IST ( prepares for 09:00 AM Short 1 )
-    - cron: '30 6 * * *'   # 12:00 PM IST ( prepares for 01:00 PM Short 2 )
-    - cron: '30 11 * * *'  # 05:00 PM IST ( prepares for 06:00 PM Short 3 )
-    - cron: '30 13 * * *'  # 07:00 PM IST ( prepares for 08:00 PM Long Video )
+    - cron: '30 2 * * *'   # 08:00 AM IST (Short 1)
+    - cron: '30 6 * * *'   # 12:00 PM IST (Short 2)
+    - cron: '30 11 * * *'  # 05:00 PM IST (Short 3)
+    - cron: '30 13 * * *'  # 07:00 PM IST (Long Video)
   workflow_dispatch:
     inputs:
       video_type:
@@ -16,9 +16,13 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PYTHONPATH: "."
+
 jobs:
   produce_and_publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -39,7 +43,7 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          pytest tests/
+          python -m pytest tests/
 
       - name: Determine Video Type
         id: vtype
