@@ -1,0 +1,72 @@
+name: Avghad Baba India 24x7 Automation
+
+on:
+  schedule:
+    - cron: '30 2 * * *'   # 08:00 AM IST ( prepares for 09:00 AM Short 1 )
+    - cron: '30 6 * * *'   # 12:00 PM IST ( prepares for 01:00 PM Short 2 )
+    - cron: '30 11 * * *'  # 05:00 PM IST ( prepares for 06:00 PM Short 3 )
+    - cron: '30 13 * * *'  # 07:00 PM IST ( prepares for 08:00 PM Long Video )
+  workflow_dispatch:
+    inputs:
+      video_type:
+        description: 'Video type to generate (short or long)'
+        required: true
+        default: 'short'
+
+permissions:
+  contents: write
+
+jobs:
+  produce_and_publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg & Hindi Fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-core fonts-noto-extra
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Unit Tests
+        run: |
+          pytest tests/
+
+      - name: Determine Video Type
+        id: vtype
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=${{ github.event.inputs.video_type }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.schedule }}" = "30 13 * * *" ]; then
+            echo "type=long" >> $GITHUB_OUTPUT
+          else
+            echo "type=short" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate and Upload Video
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: |
+          python main.py --type ${{ steps.vtype.outputs.type }}
+
+      - name: Save Publication History to Repository
+        run: |
+          git config user.name "Avghad-Baba-AutoBot"
+          git config user.email "autobot@avghadbabaindia.com"
+          git add data/publication_history.db || true
+          git diff --staged --quiet || git commit -m "Auto-update publication history"
+          git push

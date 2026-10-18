@@ -1,0 +1,46 @@
+channel:
+  name: "Avghad Baba India"
+  handle: "@avghadbabaaindia"
+  language: "hi"
+  timezone: "Asia/Kolkata"
+
+reference_channels:
+  - handle: "@SanatanKathalaya"
+    weight: 0.7
+    focus: "Sanatan Dharma, Shiva Purana, Nath/Aghor traditions, Mahabharata mysteries, Pauranik research"
+  - handle: "@zerotodreamofficial"
+    weight: 0.3
+    focus: "Spiritual mindset, life philosophy, inspirational storytelling"
+
+niche_keywords:
+  - "भगवान शिव और अघोर परंपरा"
+  - "कैलाश संहिता और शिव पुराण के गुप्त रहस्य"
+  - "नाथ संप्रदाय और सिद्ध योगियों का इतिहास"
+  - "महाभारत और रामायण के अनसुने प्रामाणिक रहस्य"
+  - "प्राचीन भारतीय मंदिर और आध्यात्मिक विज्ञान"
+  - "श्रीमद्भगवद्गीता और उपनिषद का गूढ़ ज्ञान"
+
+schedule_ist:
+  short_1: "09:00"
+  short_2: "13:00"
+  short_3: "18:00"
+  long_1: "20:00"
+
+voice:
+  default: "hi-IN-MadhurNeural"
+  rate: "+5%"
+  volume: "+0%"
+
+video:
+  short:
+    width: 1080
+    height: 1920
+    target_duration_sec: 45
+  long:
+    width: 1920
+    height: 1080
+    target_duration_sec: 360
+
+publishing:
+  public_approved: false
+  default_privacy: "private"
