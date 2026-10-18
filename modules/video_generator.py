@@ -16,7 +16,6 @@ def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: st
     for idx, img in enumerate(image_paths):
         clip_path = f"{out_mp4}_clip_{idx}.mp4"
         frames = int(scene_dur * 25)
-        # Smooth professional cinematic zoom and pan effect matching each scene duration
         vf = (
             f"scale={w*2}:{h*2},"
             f"zoompan=z='min(zoom+0.001,1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={w}x{h}:fps=25,"
@@ -41,10 +40,16 @@ def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: st
         check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
 
-    # Perfect Devanagari Hindi Subtitle Styling: Bold, clear yellow text with dark outline for high readability
-    abs_subs = os.path.abspath(subs_path).replace("\\", "/").replace(":", "\\:")
+    # Safe subtitle path escaping for FFmpeg filter on Linux runners
+    abs_subs = os.path.abspath(subs_path)
+    if os.name != 'nt':
+        # Linux path escaping for FFmpeg filter syntax
+        escaped_subs = abs_subs.replace("'", "\\'").replace(":", "\\:")
+    else:
+        escaped_subs = abs_subs.replace("\\", "/").replace(":", "\\:")
+
     sub_style = "FontName=Noto Sans Devanagari,FontSize=22,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Outline=2,Shadow=1,Alignment=2"
-    vf_sub = f"subtitles='{abs_subs}':force_style='{sub_style}'"
+    vf_sub = f"subtitles='{escaped_subs}':force_style='{sub_style}'"
 
     final_cmd = [
         "ffmpeg", "-y",
@@ -58,7 +63,7 @@ def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: st
         "-c:a", "aac", "-b:a", "192k",
         "-shortest", out_mp4
     ]
-    subprocess.run(final_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(final_cmd, check=True)
 
     for c in temp_clips + [concat_list, merged_video]:
         if os.path.exists(c):
