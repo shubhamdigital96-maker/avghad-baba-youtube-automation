@@ -1,3 +1,4 @@
+import os, sys; sys.path.insert(0, os.getcwd())
 from modules.database import init_db, record_publication, is_topic_used
 
 def test_duplicate_prevention():
