@@ -2,10 +2,10 @@ name: Avghad Baba India 24x7 Automation
 
 on:
   schedule:
-    - cron: '30 2 * * *'   # 08:00 AM IST (Short 1)
-    - cron: '30 6 * * *'   # 12:00 PM IST (Short 2)
-    - cron: '30 11 * * *'  # 05:00 PM IST (Short 3)
-    - cron: '30 13 * * *'  # 07:00 PM IST (Long Video)
+    - cron: '30 3 * * *'   # 09:00 AM IST (Short 1)
+    - cron: '30 7 * * *'   # 01:00 PM IST (Short 2)
+    - cron: '30 12 * * *'  # 06:00 PM IST (Short 3)
+    - cron: '30 14 * * *'  # 08:00 PM IST (Long Video)
   workflow_dispatch:
     inputs:
       video_type:
@@ -50,7 +50,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "type=${{ github.event.inputs.video_type }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event.schedule }}" = "30 13 * * *" ]; then
+          elif [ "${{ github.event.schedule }}" = "30 14 * * *" ]; then
             echo "type=long" >> $GITHUB_OUTPUT
           else
             echo "type=short" >> $GITHUB_OUTPUT
@@ -59,8 +59,6 @@ jobs:
       - name: Generate and Upload Video
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}

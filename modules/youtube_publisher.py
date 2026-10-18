@@ -1,10 +1,19 @@
 import os
+import logging
 import yaml
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 def get_authenticated_service():
+    required_env = (
+        "YOUTUBE_REFRESH_TOKEN",
+        "YOUTUBE_CLIENT_ID",
+        "YOUTUBE_CLIENT_SECRET",
+    )
+    missing = [name for name in required_env if not os.getenv(name)]
+    if missing:
+        raise RuntimeError(f"Missing YouTube authentication settings: {', '.join(missing)}")
     creds = Credentials(
         None,
         refresh_token=os.getenv("YOUTUBE_REFRESH_TOKEN"),
@@ -25,7 +34,7 @@ def verify_destination_channel(youtube) -> tuple[bool, str]:
         return False, "No YouTube channel found for these credentials."
     ch = items[0]
     title = ch["snippet"].get("title", "")
-    custom_url = ch["snippet"].get("customUrl", "").lower()
+    custom_url = (ch["snippet"].get("customUrl") or "").lower()
     if "avghad" not in title.lower() and "avghad" not in custom_url:
         return False, f"SAFETY BLOCK: Authenticated channel '{title}' ({custom_url}) does not match Avghad Baba India!"
     return True, f"Verified channel: {title} ({custom_url})"
@@ -62,12 +71,16 @@ def upload_video(mp4_path: str, thumb_path: str, seo_data: dict, video_type: str
         _, response = req.next_chunk()
 
     video_id = response["id"]
-    if video_type == "long" and os.path.exists(thumb_path):
+    if os.path.exists(thumb_path):
         try:
             youtube.thumbnails().set(
                 videoId=video_id,
                 media_body=MediaFileUpload(thumb_path, mimetype="image/jpeg")
             ).execute()
-        except Exception:
-            pass
+        except Exception as exc:
+            logging.warning(
+                "Video %s uploaded, but its custom thumbnail could not be set: %s",
+                video_id,
+                exc,
+            )
     return video_id
