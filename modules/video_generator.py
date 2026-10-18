@@ -1,12 +1,13 @@
 import os
 import subprocess
 import json
+import math
 
 def _allocate_scene_frames(scene_durations: list, total_audio_duration: float, fps: int = 25) -> list:
     if not scene_durations or total_audio_duration <= 0 or any(d <= 0 for d in scene_durations):
         raise ValueError("Invalid positive audio duration or scene durations")
     
-    total_target_frames = int(round(total_audio_duration * fps))
+    total_target_frames = math.ceil(total_audio_duration * fps)
     total_scene_dur = sum(scene_durations)
     if total_scene_dur <= 0:
         raise ValueError("Total scene duration must be positive")

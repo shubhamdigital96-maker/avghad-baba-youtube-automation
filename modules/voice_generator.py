@@ -1,7 +1,7 @@
 import os
 import asyncio
 import edge_tts
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 def _parse_srt_time(time_str: str) -> timedelta:
     time_str = time_str.replace(',', '.')
@@ -25,31 +25,34 @@ def _combine_subtitles(srt_files: list, offsets: list, output_path: str) -> str:
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     combined_blocks = []
     counter = 1
+    cumulative_offset = timedelta(0)
 
-    for srt_file, offset in zip(srt_files, offsets):
+    for i, srt_file in enumerate(srt_files):
         if not os.path.exists(srt_file):
+            if i < len(offsets):
+                cumulative_offset += timedelta(seconds=offsets[i])
             continue
         with open(srt_file, "r", encoding="utf-8") as f:
             content = f.read().strip()
-        if not content:
-            continue
         
-        blocks = content.split('\n\n')
-        offset_td = timedelta(seconds=offset)
-        
-        for block in blocks:
-            lines = block.split('\n')
-            if len(lines) >= 3:
-                times = lines[1].split(' --> ')
-                if len(times) == 2:
-                    start_td = _parse_srt_time(times[0]) + offset_td
-                    end_td = _parse_srt_time(times[1]) + offset_td
-                    new_time_line = f"{_format_srt_time(start_td)} --> {_format_srt_time(end_td)}"
-                    text = '\n'.join(lines[2:])
-                    combined_blocks.append(f"{counter}\n{new_time_line}\n{text}")
-                    counter += 1
+        if content:
+            blocks = content.split('\n\n')
+            for block in blocks:
+                lines = block.split('\n')
+                if len(lines) >= 3:
+                    times = lines[1].split(' --> ')
+                    if len(times) == 2:
+                        start_td = _parse_srt_time(times[0]) + cumulative_offset
+                        end_td = _parse_srt_time(times[1]) + cumulative_offset
+                        new_time_line = f"{_format_srt_time(start_td)} --> {_format_srt_time(end_td)}"
+                        text = '\n'.join(lines[2:])
+                        combined_blocks.append(f"{counter}\n{new_time_line}\n{text}")
+                        counter += 1
+                        
+        if i < len(offsets):
+            cumulative_offset += timedelta(seconds=offsets[i])
 
-    final_content = '\n\n'.join(combined_blocks) + '\n'
+    final_content = '\n\n'.join(combined_blocks) + ('\n' if combined_blocks else '')
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(final_content)
     return output_path
