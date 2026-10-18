@@ -22,6 +22,18 @@ def init_db():
     conn.commit()
     conn.close()
 
+def get_past_topics(video_type: str = "short", limit: int = 50) -> list:
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT topic FROM published_videos WHERE video_type = ? ORDER BY id DESC LIMIT ?",
+        (video_type, limit)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return [row[0] for row in rows]
+
 def is_topic_used(topic: str, video_type: str = "short") -> bool:
     init_db()
     conn = sqlite3.connect(DB_PATH)
