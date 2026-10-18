@@ -22,7 +22,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-def is_duplicate(topic: str, video_type: str) -> bool:
+def is_topic_used(topic: str, video_type: str = "short") -> bool:
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -34,7 +34,10 @@ def is_duplicate(topic: str, video_type: str) -> bool:
     conn.close()
     return count > 0
 
-def log_published_video(topic: str, video_type: str, title: str, youtube_id: str, privacy: str):
+def is_duplicate(topic: str, video_type: str = "short") -> bool:
+    return is_topic_used(topic, video_type)
+
+def record_publication(topic: str, video_type: str, title: str, youtube_id: str, privacy: str):
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -44,3 +47,6 @@ def log_published_video(topic: str, video_type: str, title: str, youtube_id: str
     )
     conn.commit()
     conn.close()
+
+def log_published_video(topic: str, video_type: str, title: str, youtube_id: str, privacy: str):
+    record_publication(topic, video_type, title, youtube_id, privacy)
