@@ -1,7 +1,4 @@
 import os
-import
-cat << 'EOF' > modules/video_generator.py
-import os
 import subprocess
 import json
 
@@ -43,10 +40,8 @@ def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: st
         check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
 
-    # Use clean relative path and escape colon for subtitles filter to prevent any FFmpeg parsing errors
     rel_subs = subs_path.replace("\\", "/")
     if ":" in rel_subs:
-        # Escape drive letter or absolute path colon safely for ffmpeg filter
         rel_subs = rel_subs.replace(":", "\\:")
 
     sub_style = "FontName=Noto Sans Devanagari,FontSize=22,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Outline=2,Shadow=1,Alignment=2"
