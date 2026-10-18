@@ -1,50 +1,46 @@
 import sqlite3
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
-DB_PATH = "data/publication_history.db"
+DB_PATH = "database.db"
 
 def init_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        topic TEXT UNIQUE,
-        video_type TEXT,
-        title TEXT,
-        youtube_id TEXT,
-        privacy_status TEXT,
-        created_at TEXT
-    )''')
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS published_videos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            topic TEXT,
+            video_type TEXT,
+            title TEXT,
+            youtube_id TEXT,
+            privacy TEXT,
+            published_at TEXT
+        )
+    """)
     conn.commit()
     conn.close()
 
-def is_topic_used(topic: str) -> bool:
+def is_duplicate(topic: str, video_type: str) -> bool:
     init_db()
     conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT 1 FROM history WHERE LOWER(topic) = LOWER(?)", (topic.strip(),))
-    row = c.fetchone()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) FROM published_videos WHERE topic = ? AND video_type = ?",
+        (topic.strip(), video_type)
+    )
+    count = cursor.fetchone()[0]
     conn.close()
-    return row is not None
+    return count > 0
 
-def get_past_topics(limit: int = 50) -> list:
+def log_published_video(topic: str, video_type: str, title: str, youtube_id: str, privacy: str):
     init_db()
     conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT topic FROM history ORDER BY id DESC LIMIT ?", (limit,))
-    rows = [r[0] for r in c.fetchall()]
-    conn.close()
-    return rows
-
-def record_publication(topic: str, video_type: str, title: str, youtube_id: str, privacy: str):
-    init_db()
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute(
-        "INSERT OR IGNORE INTO history (topic, video_type, title, youtube_id, privacy_status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-        (topic.strip(), video_type, title, youtube_id, privacy, datetime.utcnow().isoformat())
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO published_videos (topic, video_type, title, youtube_id, privacy, published_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (topic.strip(), video_type, title, youtube_id, privacy, datetime.now(timezone.utc).isoformat())
     )
     conn.commit()
     conn.close()
