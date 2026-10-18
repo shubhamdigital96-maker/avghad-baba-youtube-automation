@@ -74,5 +74,5 @@ async def generate_voiceover_async(text: str, output_audio: str, output_srt: str
     with open(output_srt, "w", encoding="utf-8") as f:
         f.write(submaker.get_srt())
 
-def generate_voiceover(text: str, output_audio: str, output_srt: str):
+def generate_voiceover(text: str, output_audio: str, output_srt: str, scenes=None, **kwargs):
     asyncio.run(generate_voiceover_async(text, output_audio, output_srt))
