@@ -1,3 +1,4 @@
+from modules.meta_publisher import publish_to_facebook
 import os
 import sys
 import argparse
