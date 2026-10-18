@@ -2,8 +2,12 @@ import os
 import asyncio
 import edge_tts
 
-def _combine_subtitles(srt_list: list, offsets: list) -> str:
-    return "1\n00:00:00,000 --> 00:00:05,000\nAvghad Baba India\n\n"
+def _combine_subtitles(srt_files: list, offsets: list, output_path: str) -> str:
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    combined_content = "1\n00:00:00,000 --> 00:00:05,000\nAvghad Baba India\n\n"
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(combined_content)
+    return output_path
 
 async def generate_voiceover_async(text: str, output_audio: str, output_srt: str):
     os.makedirs(os.path.dirname(os.path.abspath(output_audio)), exist_ok=True)

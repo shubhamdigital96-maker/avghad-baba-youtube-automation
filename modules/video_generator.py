@@ -2,10 +2,26 @@ import os
 import subprocess
 import json
 
-def _allocate_scene_frames(scene_durations: list, fps: int = 25) -> list:
-    if not scene_durations or any(d <= 0 for d in scene_durations):
-        raise ValueError("Invalid scene durations")
-    frames = [int(round(d * fps)) for d in scene_durations]
+def _allocate_scene_frames(scene_durations: list, total_audio_duration: float, fps: int = 25) -> list:
+    if not scene_durations or total_audio_duration <= 0 or any(d <= 0 for d in scene_durations):
+        raise ValueError("Invalid positive audio duration or scene durations")
+    
+    total_scene_dur = sum(scene_durations)
+    if total_scene_dur <= 0:
+        raise ValueError("Total scene duration must be positive")
+    
+    frames = []
+    allocated = 0
+    total_target_frames = int(round(total_audio_duration * fps))
+    
+    for i, d in enumerate(scene_durations):
+        if i == len(scene_durations) - 1:
+            f = total_target_frames - allocated
+        else:
+            f = int(round((d / total_scene_dur) * total_target_frames))
+        frames.append(max(1, f))
+        allocated += frames[-1]
+        
     return frames
 
 def get_audio_duration(audio_path: str) -> float:
