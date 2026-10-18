@@ -27,7 +27,7 @@ schedule_ist:
   long_1: "20:00"
 
 voice:
-  default: "hi-IN-MadhurNeural"
+  default: "hi-IN-SwaraNeural"
   rate: "+5%"
   volume: "+0%"
 

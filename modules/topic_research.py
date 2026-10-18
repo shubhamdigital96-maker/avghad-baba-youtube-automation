@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 import yaml
 from google import genai
 from googleapiclient.discovery import build
@@ -22,16 +23,20 @@ def fetch_reference_titles() -> list:
             res = yt.search().list(q=handle, type="video", part="snippet", maxResults=10, order="viewCount").execute()
             for item in res.get("items", []):
                 titles.append(item["snippet"]["title"])
-    except Exception:
-        pass
+    except Exception as exc:
+        logging.warning("Could not fetch optional reference titles: %s", exc)
     return titles
 
+
 def select_unique_topic(video_type: str = "short") -> dict:
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("Missing required Gemini setting: GEMINI_API_KEY")
     with open("config.yaml", "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
-    past = get_past_topics(60)
+    past = get_past_topics(video_type, 60)
     ref_titles = fetch_reference_titles()
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    client = genai.Client(api_key=api_key)
     prompt = f"""You are the Chief Research Strategist for the Hindi YouTube channel 'Avghad Baba India' (@avghadbabaaindia).
 Channel Niche: Deep Devotional, Spiritual Research, Lord Shiva, Aghor/Nath traditions, Shiva Purana, Mahabharata mysteries, Ancient Temples, Bhagavad Gita philosophy.
 Reference Trending Titles from @SanatanKathalaya and @zerotodreamofficial:
@@ -48,12 +53,20 @@ Respond ONLY in valid JSON with keys:
 "research_summary": (string in Hindi explaining scriptural/historical context),
 "search_keywords_en": (list of 5 English visual keywords for stock footage like ["ancient temple india", "himalayas snow", "meditation silhouette", "lamp fire", "night stars"])
 """
-    resp = client.models.generate_content(
-        model="gemini-3.8-flash",
-        contents=prompt,
-        config={"response_mime_type": "application/json"}
-    )
-    data = json.loads(resp.text)
-    if is_topic_used(data["topic"]):
-        data["topic"] = data["topic"] + " - गूढ़ रहस्य"
-    return data
+    for attempt in range(3):
+        resp = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config={"response_mime_type": "application/json"},
+        )
+        data = json.loads(resp.text)
+        topic = data.get("topic")
+        if not topic:
+            raise ValueError("Gemini returned a topic without a topic value.")
+        if not is_topic_used(topic, video_type):
+            return data
+        prompt += (
+            f"\nThe topic '{topic}' was already used. Generate a genuinely different "
+            "topic; do not alter or decorate the repeated topic."
+        )
+    raise RuntimeError("Gemini returned a previously used topic three times.")

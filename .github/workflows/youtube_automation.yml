@@ -10,8 +10,12 @@ on:
     inputs:
       video_type:
         description: 'Video type to generate (short or long)'
+        type: choice
         required: true
         default: 'short'
+        options:
+          - short
+          - long
 
 permissions:
   contents: write
@@ -47,10 +51,13 @@ jobs:
 
       - name: Determine Video Type
         id: vtype
+        env:
+          INPUT_VIDEO_TYPE: ${{ github.event.inputs.video_type }}
+          SCHEDULE_CRON: ${{ github.event.schedule }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "type=${{ github.event.inputs.video_type }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event.schedule }}" = "30 14 * * *" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "type=$INPUT_VIDEO_TYPE" >> "$GITHUB_OUTPUT"
+          elif [ "$SCHEDULE_CRON" = "30 14 * * *" ]; then
             echo "type=long" >> $GITHUB_OUTPUT
           else
             echo "type=short" >> $GITHUB_OUTPUT
@@ -62,13 +69,14 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          VIDEO_TYPE: ${{ steps.vtype.outputs.type }}
         run: |
-          python main.py --type ${{ steps.vtype.outputs.type }}
+          python main.py --type "$VIDEO_TYPE"
 
       - name: Save Publication History to Repository
         run: |
           git config user.name "Avghad-Baba-AutoBot"
           git config user.email "autobot@avghadbabaindia.com"
-          git add data/publication_history.db || true
+          git add database.db
           git diff --staged --quiet || git commit -m "Auto-update publication history"
           git push

@@ -3,6 +3,7 @@ import json
 import subprocess
 
 def verify_video_quality(mp4_path: str, video_type: str, seo_data: dict) -> tuple[bool, str]:
+    mp4_path = os.path.abspath(mp4_path)
     if not os.path.exists(mp4_path) or os.path.getsize(mp4_path) < 50000:
         return False, "MP4 file missing or too small."
     cmd = [

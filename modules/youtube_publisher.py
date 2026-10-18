@@ -40,6 +40,8 @@ def verify_destination_channel(youtube) -> tuple[bool, str]:
     return True, f"Verified channel: {title} ({custom_url})"
 
 def upload_video(mp4_path: str, thumb_path: str, seo_data: dict, video_type: str) -> str:
+    mp4_path = os.path.abspath(mp4_path)
+    thumb_path = os.path.abspath(thumb_path)
     with open("config.yaml", "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 

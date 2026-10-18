@@ -3,7 +3,10 @@ import json
 from google import genai
 
 def generate_script(topic_data: dict, video_type: str = "short") -> dict:
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("Missing required Gemini setting: GEMINI_API_KEY")
+    client = genai.Client(api_key=api_key)
     scenes_count = "5 to 6 concise scenes (total 90-115 Hindi words, ~40-50 seconds)" if video_type == "short" else "14 to 18 detailed scenes (total 750-950 Hindi words, ~5-6 minutes)"
     prompt = f"""Write a powerful, factually responsible, deeply engaging 100% original Hindi script for 'Avghad Baba India'.
 Topic: {topic_data['topic']}
@@ -29,7 +32,7 @@ Return ONLY valid JSON:
   "full_narration": "Complete combined Hindi narration with natural punctuation"
 }}"""
     resp = client.models.generate_content(
-        model="gemini-3.8-flash",
+        model="gemini-2.5-flash",
         contents=prompt,
         config={"response_mime_type": "application/json"}
     )
