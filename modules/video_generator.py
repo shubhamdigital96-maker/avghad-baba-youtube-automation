@@ -10,15 +10,16 @@ def get_audio_duration(audio_path: str) -> float:
 def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: str, video_type: str = "short") -> str:
     w, h = (1080, 1920) if video_type == "short" else (1920, 1080)
     total_dur = get_audio_duration(audio_path)
-    scene_dur = max(2.5, total_dur / max(1, len(image_paths)))
+    scene_dur = max(2.0, total_dur / max(1, len(image_paths)))
 
     temp_clips = []
     for idx, img in enumerate(image_paths):
         clip_path = f"{out_mp4}_clip_{idx}.mp4"
         frames = int(scene_dur * 25)
+        # Smooth professional cinematic zoom and pan effect matching each scene duration
         vf = (
             f"scale={w*2}:{h*2},"
-            f"zoompan=z='min(zoom+0.0012,1.25)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={w}x{h}:fps=25,"
+            f"zoompan=z='min(zoom+0.001,1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={w}x{h}:fps=25,"
             f"format=yuv420p"
         )
         cmd = [
@@ -40,16 +41,20 @@ def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: st
         check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
 
-    # Generate subtle spiritual ambient drone in background & mix with narration
+    # Perfect Devanagari Hindi Subtitle Styling: Bold, clear yellow text with dark outline for high readability
+    abs_subs = os.path.abspath(subs_path).replace("\\", "/").replace(":", "\\:")
+    sub_style = "FontName=Noto Sans Devanagari,FontSize=22,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Outline=2,Shadow=1,Alignment=2"
+    vf_sub = f"subtitles='{abs_subs}':force_style='{sub_style}'"
+
     final_cmd = [
         "ffmpeg", "-y",
         "-i", merged_video,
         "-i", audio_path,
         "-f", "lavfi", "-i", f"sine=frequency=136.1:duration={total_dur:.2f}",
         "-filter_complex",
-        "[2:a]volume=0.04,lowpass=f=300[bg];[1:a][bg]amix=inputs=2:duration=first:dropout_transition=2[aout]",
-        "-map", "0:v", "-map", "[aout]",
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+        f"[0:v]{vf_sub}[v];[2:a]volume=0.03[bg];[1:a][bg]amix=inputs=2:duration=first[aout]",
+        "-map", "[v]", "-map", "[aout]",
+        "-c:v", "libx264", "-preset", "medium", "-crf", "22",
         "-c:a", "aac", "-b:a", "192k",
         "-shortest", out_mp4
     ]
