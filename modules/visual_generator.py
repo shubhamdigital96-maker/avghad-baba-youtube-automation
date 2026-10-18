@@ -1,79 +1,47 @@
 import os
-import urllib.parse
-import requests
 from PIL import Image, ImageDraw, ImageFilter
 
 def fetch_scene_visuals(scenes: list, video_type: str, out_dir: str) -> list:
     os.makedirs(out_dir, exist_ok=True)
     w, h = (1080, 1920) if video_type == "short" else (1920, 1080)
     paths = []
-    
-    # High-quality curated spiritual keywords fallback list
-    fallback_keywords = [
-        "ancient indian shiva temple Himalayas dramatic lighting",
-        "holy sadhu meditating in himalayas mountains",
-        "divine glowing shiva lingam with sacred fire",
-        "mystical ancient Indian temple pillars at night",
-        "sacred river ganga aarti with glowing lamps",
-        "cosmic universe spiritual meditation aura glow"
+
+    # Rich spiritual Indian color palettes for professional devotional videos
+    palettes = [
+        ((235, 110, 20), (80, 10, 5)),      # Divine Saffron & Deep Maroon
+        ((15, 20, 55), (120, 60, 10)),      # Cosmic Night & Temple Gold
+        ((180, 40, 40), (20, 10, 40)),      # Sacred Flame & Spiritual Purple
+        ((240, 170, 30), (50, 20, 10)),     # Temple Brass & Deep Ochre
+        ((20, 50, 80), (10, 10, 20))        # Holy River & Deep Night
     ]
 
     for idx, scene in enumerate(scenes):
-        raw_query = scene.get("visual_query_en", "ancient hindu temple")
-        query = f"{raw_query} indian devotional spiritual cinematic 8k"
         img_path = os.path.join(out_dir, f"scene_{idx:02d}.jpg")
-        downloaded = False
+        col1, col2 = palettes[idx % len(palettes)]
 
-        # 1. Primary High-Res AI Art Engine (Pollinations AI - Fast & Never Fails)
-        try:
-            encoded_query = urllib.parse.quote(query)
-            ai_url = f"https://image.pollinations.ai/prompt/{encoded_query}?width={w}&height={h}&nologo=true&seed={idx+33}"
-            r = requests.get(ai_url, timeout=20)
-            if r.status_code == 200 and len(r.content) > 8000:
-                with open(img_path, "wb") as f:
-                    f.write(r.content)
-                # Verify it's a valid image
-                Image.open(img_path).verify()
-                downloaded = True
-        except Exception:
-            pass
+        # Create high-end cinematic spiritual gradient background
+        img = Image.new("RGB", (w, h), col1)
+        draw = ImageDraw.Draw(img)
 
-        # 2. Secondary Reliable Backup (Unsplash Source for real spiritual/temple photos)
-        if not downloaded:
-            try:
-                backup_q = urllib.parse.quote(fallback_keywords[idx % len(fallback_keywords)])
-                unsplash_url = f"https://source.unsplash.com/{w}x{h}/?{backup_q}"
-                r = requests.get(unsplash_url, timeout=15)
-                if r.status_code == 200 and len(r.content) > 8000:
-                    with open(img_path, "wb") as f:
-                        f.write(r.content)
-                    Image.open(img_path).verify()
-                    downloaded = True
-            except Exception:
-                pass
+        # Vertical gradient blend
+        for y in range(h):
+            factor = y / h
+            r = int(col1[0] * (1 - factor) + col2[0] * factor)
+            g = int(col1[1] * (1 - factor) + col2[1] * factor)
+            b = int(col1[2] * (1 - factor) + col2[2] * factor)
+            draw.line([(0, y), (w, y)], fill=(r, g, b))
 
-        # 3. Ultimate Rich Gradient Art with Glow (If all internet fetches fail)
-        if not downloaded:
-            img = Image.new("RGB", (w, h), (10, 5, 25))
-            draw = ImageDraw.Draw(img)
-            # Create a rich vertical spiritual gradient
-            for y in range(h):
-                factor = y / h
-                r_c = int(20 + factor * 80)
-                g_c = int(10 + factor * 30)
-                b_c = int(45 + factor * 110)
-                draw.line([(0, y), (w, y)], fill=(r_c, g_c, b_c))
-            # Draw a glowing circle in center
-            draw.ellipse([w//2 - 150, h//2 - 150, w//2 + 150, h//2 + 150], fill=(255, 180, 50, 100))
-            img.save(img_path, "JPEG", quality=95)
+        # Add sacred divine light aura / halo in the center
+        halo_radius = w // 3
+        for r_val in range(halo_radius, 0, -5):
+            alpha = int(25 * (1 - r_val / halo_radius))
+            draw.ellipse(
+                [w//2 - r_val, h//2 - r_val, w//2 + r_val, h//2 + r_val],
+                outline=(255, 220, 100, alpha), width=3
+            )
 
-        # Ensure correct size
-        try:
-            im = Image.open(img_path).convert("RGB")
-            im = im.resize((w, h), Image.Resampling.LANCZOS)
-            im.save(img_path, "JPEG", quality=95)
-        except Exception:
-            pass
-
+        img = img.filter(ImageFilter.GaussianBlur(1))
+        img.save(img_path, "JPEG", quality=95)
         paths.append(img_path)
+
     return paths
