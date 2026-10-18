@@ -2,6 +2,12 @@ import os
 import subprocess
 import json
 
+def _allocate_scene_frames(scene_durations: list, fps: int = 25) -> list:
+    if not scene_durations or any(d <= 0 for d in scene_durations):
+        raise ValueError("Invalid scene durations")
+    frames = [int(round(d * fps)) for d in scene_durations]
+    return frames
+
 def get_audio_duration(audio_path: str) -> float:
     cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", audio_path]
     res = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -12,7 +18,6 @@ def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: st
     total_dur = get_audio_duration(audio_path)
     scene_dur = max(2.0, total_dur / max(1, len(image_paths)))
 
-    # Fallback if subtitle doesn't exist
     abs_subs_path = os.path.abspath(subs_path)
     if not os.path.exists(abs_subs_path) or os.path.getsize(abs_subs_path) == 0:
         os.makedirs(os.path.dirname(abs_subs_path), exist_ok=True)
@@ -47,9 +52,7 @@ def render_video(image_paths: list, audio_path: str, subs_path: str, out_mp4: st
         check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
 
-    # Escape path for FFmpeg subtitles filter safely
     formatted_subs = abs_subs_path.replace("\\", "/").replace(":", "\\:")
-
     sub_style = "FontName=Noto Sans Devanagari,FontSize=22,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Outline=2,Shadow=1,Alignment=2"
     vf_sub = f"subtitles='{formatted_subs}':force_style='{sub_style}'"
 
