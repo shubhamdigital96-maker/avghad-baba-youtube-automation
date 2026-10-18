@@ -49,7 +49,7 @@ Respond ONLY in valid JSON with keys:
 "search_keywords_en": (list of 5 English visual keywords for stock footage like ["ancient temple india", "himalayas snow", "meditation silhouette", "lamp fire", "night stars"])
 """
     resp = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3.8-flash",
         contents=prompt,
         config={"response_mime_type": "application/json"}
     )
