@@ -1,7 +1,9 @@
 import os
 import json
 from google import genai
-from google.genai import errors
+
+def generate_script(topic: str, video_type: str = "short") -> dict:
+    return generate_script_and_metadata(topic, video_type)
 
 def generate_script_and_metadata(topic: str, video_type: str = "short") -> dict:
     api_key = os.getenv("GEMINI_API_KEY")
@@ -28,7 +30,6 @@ def generate_script_and_metadata(topic: str, video_type: str = "short") -> dict:
             text = text[:-3]
         return json.loads(text.strip())
     except Exception as e:
-        # Fallback if quota / rate limit (429) or any API error occurs
         print(f"Warning: Gemini API failed ({e}). Using robust fallback script generation.")
         return {
             "title": f"रहस्यमय सनातन कथा: {topic} 🙏 #AvghadBabaIndia",
