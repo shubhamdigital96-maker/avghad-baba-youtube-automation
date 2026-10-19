@@ -31,7 +31,6 @@ def select_unique_topic(video_type: str = "short") -> str:
     except Exception as e:
         print(f"Warning: Topic research Gemini API failed ({e}). Using fallback topic pool.")
         
-    # Fallback to unused topic from pool
     for t in FALLBACK_TOPICS:
         if not is_topic_used(t, video_type):
             return t
