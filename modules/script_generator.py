@@ -16,6 +16,7 @@ def generate_script_and_metadata(topic: str, video_type: str = "short") -> dict:
     - "description": Video description with hashtags.
     - "tags": List of tags.
     - "scenes": List of objects, each having "narration" (Hindi text) and "visual" (English image prompt description).
+    - "full_narration": Combined full narration text of all scenes.
     """
     
     try:
@@ -28,16 +29,25 @@ def generate_script_and_metadata(topic: str, video_type: str = "short") -> dict:
             text = text[7:]
         if text.endswith("```"):
             text = text[:-3]
-        return json.loads(text.strip())
+        data = json.loads(text.strip())
+        
+        # Ensure 'full_narration' is always safely present even if AI missed it
+        if "full_narration" not in data or not data["full_narration"]:
+            scenes = data.get("scenes", [])
+            data["full_narration"] = " ".join([s.get("narration", "") for s in scenes])
+            
+        return data
     except Exception as e:
         print(f"Warning: Gemini API failed ({e}). Using robust fallback script generation.")
+        fallback_scenes = [
+            {"narration": f"आइए जानते हैं {topic} के इस महान और गुप्त रहस्य के बारे में।", "visual": "mystical cosmic spiritual background glowing energy"},
+            {"narration": "यह कथा हमारे सनातन इतिहास का एक अत्यंत महत्वपूर्ण और शक्तिशाली हिस्सा है।", "visual": "ancient sacred Indian temple divine atmosphere"},
+            {"narration": "हर हर महादेव! ऐसे ही रहस्यों के लिए चैनल को सब्सक्राइब करें।", "visual": "divine light shiva trishul background"}
+        ]
         return {
             "title": f"रहस्यमय सनातन कथा: {topic} 🙏 #AvghadBabaIndia",
             "description": f"जानें {topic} का अद्भुत और अनकहा रहस्य। सनातन धर्म और पौराणिक कथाओं के लिए सब्सक्राइब करें Avghad Baba India। #shorts #Shiva #Mythology",
             "tags": ["Avghad Baba India", "Mythology", "Shiva", "Sanatan", "Shorts"],
-            "scenes": [
-                {"narration": f"आइए जानते हैं {topic} के इस महान और गुप्त रहस्य के बारे में।", "visual": "mystical cosmic spiritual background glowing energy"},
-                {"narration": "यह कथा हमारे सनातन इतिहास का एक अत्यंत महत्वपूर्ण और शक्तिशाली हिस्सा है।", "visual": "ancient sacred Indian temple divine atmosphere"},
-                {"narration": "हर हर महादेव! ऐसे ही रहस्यों के लिए चैनल को सब्सक्राइब करें।", "visual": "divine light shiva trishul background"}
-            ]
+            "scenes": fallback_scenes,
+            "full_narration": " ".join([s["narration"] for s in fallback_scenes])
         }
