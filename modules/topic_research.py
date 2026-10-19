@@ -16,7 +16,7 @@ def select_unique_topic(video_type: str = "short") -> str:
     client = genai.Client(api_key=api_key) if api_key else genai.Client()
     
     prompt = f"""
-    Suggest a unique, highly engaging, and viral Hindi YouTube {'Short' title/topic} about Lord Shiva, Sanatan mythology, or secret Puranic legends for the channel 'Avghad Baba India'.
+    Suggest a unique, highly engaging, and viral Hindi YouTube {'Short' if video_type == 'short' else 'Long'} title/topic about Lord Shiva, Sanatan mythology, or secret Puranic legends for the channel 'Avghad Baba India'.
     Return ONLY the topic title in Hindi, nothing else. Do not repeat common topics.
     """
     
